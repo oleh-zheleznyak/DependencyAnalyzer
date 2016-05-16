@@ -42,46 +42,35 @@ namespace DependencyAnalyzer.Core
 
         public IEnumerable<Package> GetVerticesReachableFrom(Package source)
         {
-            return new DepthFirstOrderIterator(this, source);
+            return new DepthFirstOrderIterator(this).Dfs(source);
         }
 
-        private class DepthFirstOrderIterator : IEnumerable<Package>
+        private class DepthFirstOrderIterator
         {
-            public DepthFirstOrderIterator(PackageDependencyGraph graph, Package source)
+            public DepthFirstOrderIterator(PackageDependencyGraph graph)
             {
                 _graph = graph;
-                _mark = new HashSet<Package>();
-                _source = source;
-                _preorder = new Queue<Package>();
-
-                Dfs(source);
             }
 
-            private readonly Queue<Package> _preorder;
             private readonly PackageDependencyGraph _graph;
-            private readonly HashSet<Package> _mark;
-            private readonly Package _source;
 
-            public void Dfs(Package source)
+            public IEnumerable<Package> Dfs(Package source)
             {
-                _preorder.Enqueue(source);
-                _mark.Add(source);
+                var _mark = new HashSet<Package>();
+                var stack = new Stack<Package>();
+                stack.Push(source);
 
-                foreach (var package in _graph._adjacencyList[source])
+                while (stack.Count > 0)
                 {
-                    if (!_mark.Contains(package))
-                        Dfs(package);
+                    var current = stack.Pop();
+                    _mark.Add(source);
+                    yield return current;
+
+                    foreach (var package in _graph._adjacencyList[current])
+                    {
+                        if (!_mark.Contains(package)) stack.Push(package);
+                    }
                 }
-            }
-
-            public IEnumerator<Package> GetEnumerator()
-            {
-                return _preorder.GetEnumerator();
-            }
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
             }
         }
     }
